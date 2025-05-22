@@ -1,61 +1,101 @@
 'use client'
+'use client'
 import { useState, useEffect } from 'react';
 
-const ProductPage = () => {
-  // Dados do produto (simulando uma API)
-  const productData = {
-    id: 'tenis-esportivo-2023',
-    title: 'Tênis Esportivo Premium',
-    description: 'Tênis esportivo de alta performance com tecnologia de amortecimento avançada para maior conforto durante suas atividades físicas.',
-    price: 299.90,
-    discountPrice: 249.90,
-    colors: [
-      { name: 'preto', label: 'Preto' },
-      { name: 'branco', label: 'Branco' },
-      { name: 'azul', label: 'Azul' },
-    ],
-    sizes: ['36', '37', '38', '39', '40', '41', '42', '43', '44'],
-    rating: 4.7,
-    reviews: 128,
-  };
+// Types
+type Color = {
+  name: string;
+  label: string;
+};
 
+type ShippingInfo = {
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  [key: string]: string; // For other properties that might come from the API
+};
+
+type ProductData = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  discountPrice: number;
+  colors: Color[];
+  sizes: string[];
+  rating: number;
+  reviews: number;
+};
+
+type SavedData = {
+  selectedColor: string;
+  selectedSize: string;
+  cep: string;
+  shippingInfo: ShippingInfo | null;
+  quantity: number;
+  timestamp: string;
+};
+
+// Dados do produto (simulando uma API)
+const productData: ProductData = {
+  id: 'tenis-esportivo-2023',
+  title: 'Tênis Esportivo Premium',
+  description: 'Tênis esportivo de alta performance com tecnologia de amortecimento avançada para maior conforto durante suas atividades físicas.',
+  price: 299.90,
+  discountPrice: 249.90,
+  colors: [
+    { name: 'preto', label: 'Preto' },
+    { name: 'branco', label: 'Branco' },
+    { name: 'azul', label: 'Azul' },
+  ],
+  sizes: ['36', '37', '38', '39', '40', '41', '42', '43', '44'],
+  rating: 4.7,
+  reviews: 128,
+};
+
+const ProductPage = () => {
   // Estados
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedSize, setSelectedSize] = useState('');
-  const [mainImage, setMainImage] = useState('');
-  const [thumbnails, setThumbnails] = useState([]);
-  const [cep, setCep] = useState('');
-  const [shippingInfo, setShippingInfo] = useState(null);
-  const [cepError, setCepError] = useState('');
-  const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [mainImage, setMainImage] = useState<string>('');
+  const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const [cep, setCep] = useState<string>('');
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null);
+  const [cepError, setCepError] = useState<string>('');
+  const [quantity, setQuantity] = useState<number>(1);
 
   // Carregar dados salvos ao montar o componente
   useEffect(() => {
     const savedData = localStorage.getItem('productPageData');
     if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      const savedTime = new Date(parsedData.timestamp);
-      const now = new Date();
-      
-      // Verificar se os dados têm menos de 15 minutos
-      if ((now - savedTime) < 15 * 60 * 1000) {
-        setSelectedColor(parsedData.selectedColor || '');
-        setSelectedSize(parsedData.selectedSize || '');
-        setCep(parsedData.cep || '');
-        setQuantity(parsedData.quantity || 1);
-        
-        if (parsedData.selectedColor) {
-          loadImages(parsedData.selectedColor);
+      try {
+        const parsedData: SavedData = JSON.parse(savedData);
+        const savedTime:Date = new Date(parsedData.timestamp);
+        const now:Date = new Date();
+
+        // Verificar se os dados têm menos de 15 minutos
+        if ((now.getTime() - savedTime.getTime()) < 15 * 60 * 1000) {
+          setSelectedColor(parsedData.selectedColor || '');
+          setSelectedSize(parsedData.selectedSize || '');
+          setCep(parsedData.cep || '');
+          setQuantity(parsedData.quantity || 1);
+
+          if (parsedData.selectedColor) {
+            loadImages(parsedData.selectedColor);
+          }
+
+          if (parsedData.cep && parsedData.shippingInfo) {
+            setShippingInfo(parsedData.shippingInfo);
+          }
+        } else {
+          localStorage.removeItem('productPageData');
         }
-        
-        if (parsedData.cep && parsedData.shippingInfo) {
-          setShippingInfo(parsedData.shippingInfo);
-        }
-      } else {
-        localStorage.removeItem('productPageData');
+      } catch (error) {
+        console.error('Error parsing saved data:', error);
       }
     }
-    
+
     // Se não houver cor selecionada, seleciona a primeira por padrão
     if (!selectedColor && productData.colors.length > 0) {
       handleColorSelect(productData.colors[0].name);
@@ -64,7 +104,7 @@ const ProductPage = () => {
 
   // Salvar dados sempre que houver alterações
   useEffect(() => {
-    const dataToSave = {
+    const dataToSave: SavedData = {
       selectedColor,
       selectedSize,
       cep,
@@ -76,7 +116,7 @@ const ProductPage = () => {
   }, [selectedColor, selectedSize, cep, shippingInfo, quantity]);
 
   // Carregar imagens baseadas na cor selecionada
-  const loadImages = (color) => {
+  const loadImages = (color: string) => {
     const images = [
       `tenis-01-${color}.avif`,
       `tenis-02-${color}.avif`,
@@ -89,36 +129,36 @@ const ProductPage = () => {
   };
 
   // Selecionar cor
-  const handleColorSelect = (color) => {
+  const handleColorSelect = (color: string) => {
     loadImages(color);
   };
 
   // Selecionar tamanho
-  const handleSizeSelect = (size) => {
+  const handleSizeSelect = (size: string) => {
     setSelectedSize(size);
   };
 
   // Alterar imagem principal ao clicar na miniatura
-  const handleThumbnailClick = (image) => {
+  const handleThumbnailClick = (image: string) => {
     setMainImage(image);
   };
 
   // Consultar CEP
-  const handleCepSubmit = async (e) => {
+  const handleCepSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCepError('');
-    
+
     // Validar CEP
     const cleanedCep = cep.replace(/\D/g, '');
     if (cleanedCep.length !== 8) {
       setCepError('CEP deve conter 8 dígitos');
       return;
     }
-    
+
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cleanedCep}/json/`);
-      const data = await response.json();
-      
+      const data: ShippingInfo = await response.json();
+
       if (data.erro) {
         setCepError('CEP não encontrado');
         setShippingInfo(null);
@@ -132,7 +172,7 @@ const ProductPage = () => {
   };
 
   // Ajustar quantidade
-  const handleQuantityChange = (newQuantity) => {
+  const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity < 1) return;
     if (newQuantity > 10) return;
     setQuantity(newQuantity);
@@ -144,34 +184,34 @@ const ProductPage = () => {
         {/* Galeria de Imagens */}
         <div className="md:w-2/5">
           <div className="bg-gray-100 rounded-lg overflow-hidden mb-4">
-            <img 
-              src={`/${mainImage}`} 
-              alt={productData.title} 
+            <img
+              src={`/${mainImage}`}
+              alt={productData.title}
               className="w-full h-auto object-cover"
             />
           </div>
-          
+
           <div className="grid grid-cols-4 gap-2">
             {thumbnails.map((thumb, index) => (
-              <button 
+              <button
                 key={index}
                 onClick={() => handleThumbnailClick(thumb)}
                 className={`cursor-pointer bg-gray-100 rounded-md overflow-hidden ${mainImage === thumb ? 'ring-2 ring-blue-500' : ''}`}
               >
-                <img 
-                  src={`/${thumb}`} 
-                  alt={`${productData.title} - ${index + 1}`} 
+                <img
+                  src={`/${thumb}`}
+                  alt={`${productData.title} - ${index + 1}`}
                   className="w-full h-auto object-cover"
                 />
               </button>
             ))}
           </div>
         </div>
-        
+
         {/* Informações do Produto */}
         <div className="md:w-3/5">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">{productData.title}</h1>
-          
+
           <div className="flex items-center mb-4">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
@@ -187,7 +227,7 @@ const ProductPage = () => {
             </div>
             <span className="text-gray-600 ml-2">{productData.rating} ({productData.reviews} avaliações)</span>
           </div>
-          
+
           <div className="mb-6">
             <span className="text-3xl font-bold text-gray-900">R$ {productData.discountPrice.toFixed(2)}</span>
             {productData.discountPrice < productData.price && (
@@ -199,9 +239,9 @@ const ProductPage = () => {
               </>
             )}
           </div>
-          
+
           <p className="text-gray-700 mb-6">{productData.description}</p>
-          
+
           {/* Seletor de Cores */}
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Cor: {productData.colors.find(c => c.name === selectedColor)?.label}</h3>
@@ -217,7 +257,7 @@ const ProductPage = () => {
               ))}
             </div>
           </div>
-          
+
           {/* Seletor de Tamanhos */}
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Tamanho</h3>
@@ -233,12 +273,12 @@ const ProductPage = () => {
               ))}
             </div>
           </div>
-          
+
           {/* Quantidade */}
           <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Quantidade</h3>
             <div className="flex items-center">
-              <button 
+              <button
                 onClick={() => handleQuantityChange(quantity - 1)}
                 className="cursor-pointer px-3 py-1 border border-gray-300 rounded-l-md bg-gray-100"
               >
@@ -247,7 +287,7 @@ const ProductPage = () => {
               <span className="px-4 py-1 border-t border-b border-gray-300 bg-white text-center w-12">
                 {quantity}
               </span>
-              <button 
+              <button
                 onClick={() => handleQuantityChange(quantity + 1)}
                 className="cursor-pointer px-3 py-1 border border-gray-300 rounded-r-md bg-gray-100"
               >
@@ -255,15 +295,15 @@ const ProductPage = () => {
               </button>
             </div>
           </div>
-          
+
           {/* Botão de Comprar */}
-          <button 
+          <button
             className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md mb-6 transition-colors"
             disabled={!selectedSize || !selectedColor}
           >
             Adicionar ao Carrinho
           </button>
-          
+
           {/* Frete */}
           <div className="border-t border-gray-200 pt-6">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Calcular frete e prazo</h3>
@@ -275,18 +315,18 @@ const ProductPage = () => {
                 placeholder="Digite seu CEP"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="cursor-pointer bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md transition-colors"
               >
                 Calcular
               </button>
             </form>
-            
+
             {cepError && (
               <p className="text-red-500 text-sm mb-2">{cepError}</p>
             )}
-            
+
             {shippingInfo && (
               <div className="bg-gray-50 p-3 rounded-md">
                 <p className="text-gray-700">
