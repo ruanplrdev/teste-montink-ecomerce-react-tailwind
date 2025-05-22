@@ -166,6 +166,7 @@ const ProductPage = () => {
         setShippingInfo(data);
       }
     } catch (error) {
+      console.log(error);
       setCepError('Erro ao consultar CEP. Tente novamente.');
       setShippingInfo(null);
     }
